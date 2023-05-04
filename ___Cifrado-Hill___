@@ -1,0 +1,183 @@
+#include<bits/stdc++.h>
+using namespace std;
+
+const int mod = 29;
+map<char,int>tabla;
+char toC[35];
+
+struct matrix{
+    int mat[2][2];
+
+    matrix(){
+        memset(mat,0,sizeof(mat));
+    }
+
+    matrix operator * (const matrix & a)const {
+        matrix c = matrix();
+        for(int i=0;i<2;i++){
+            for(int j=0;j<2;j++){
+                for(int k=0;k<2;k++){
+                    c.mat[i][j] += (mat[i][k] * a.mat[k][j])%mod;
+                    c.mat[i][j] %= mod;
+                }
+            }
+        }
+
+        return c;
+    }
+
+    int calc_inverse_det(){
+        int mult = mat[0][0] * mat[1][1];
+        mult -= (mat[0][1] * mat[1][0]);
+        mult = (mult + mod) % mod;
+
+        int inv=0;
+        for(int i=0;i<mod;i++){
+            int c = (mult * i) % mod;
+            if(c == 1){
+                inv = i;
+                break;
+            }
+        }
+
+        return inv;
+    }
+
+    matrix inverse(){
+        matrix c = matrix();
+        matrix adj = matrix();
+
+        adj.mat[0][0] = mat[1][1];
+        adj.mat[1][1] = mat[0][0];
+        adj.mat[0][1] = (-mat[0][1] + mod)%mod;
+        adj.mat[1][0] = (-mat[1][0] + mod)%mod;
+
+        int inverse = calc_inverse_det();
+
+        for(int i=0;i<2;i++){
+            for(int j=0;j<2;j++){
+                c.mat[i][j] = (adj.mat[i][j] * inverse)%mod;
+            }
+        }
+        return c;
+    }
+
+    void imprime(){
+        cout << "Matrix :" << '\n';
+        for(int i=0;i<2;i++){
+            for(int j=0;j<2;j++){
+                cout << mat[i][j] << " ";
+            }
+        }
+        cout << '\n';
+    }
+
+};
+
+string Cipher(string s,matrix clave){
+    int m = 2;
+    int n = s.size();
+    string ans="";
+    for(int i=0;i<n;i+=2){
+        int fn = tabla[s[i]];
+        int fn1 = 0;
+        if(i+1 < n){
+            fn1 = tabla[s[i+1]];
+        }
+        matrix Vector = matrix();
+        Vector.mat[0][0] = fn;
+        Vector.mat[1][0] = fn1;
+        matrix mult = clave * Vector;
+
+        ans += toC[(mult.mat[0][0])%mod];
+
+        ans += toC[(mult.mat[1][0])%mod];
+
+    }
+    return ans;
+}
+
+string Decipher(string s,matrix clave){
+    int m = 2;
+    int n = s.size();
+    string ans="";
+
+    matrix inv = clave.inverse();
+
+    for(int i=0;i<n;i+=2){
+        int fn = tabla[s[i]];
+        int fn1 = 0;
+        if(i+1 < n){
+            fn1 = tabla[s[i+1]];
+        }
+        matrix Vector = matrix();
+        Vector.mat[0][0] = fn;
+        Vector.mat[1][0] = fn1;
+        matrix mult = inv * Vector;
+
+        ans += toC[(mult.mat[0][0])%mod];
+        if(i+1 < n){
+            ans += toC[(mult.mat[1][0])%mod];
+        }
+    }
+
+    return ans;
+}
+void Build_Dictionary(){
+    int cur = 1;
+    for(int i='A';i<='N';i++){
+        tabla[(char)(i)] = cur;
+        toC[cur] = (char)(i);
+        cur++;
+    }
+
+    tabla['Ñ'] = cur;
+    toC[cur] = 'Ñ';
+
+    cur++;
+
+    for(int i='O';i<='Z';i++){
+        tabla[(char)(i)] = cur;
+        toC[cur] = (char)(i);
+        cur++;
+    }
+
+    tabla[' '] = cur;
+    toC[cur] = ' ';
+    cur++;
+    cur %= mod;
+    tabla['*'] = cur;
+    toC[cur] = '*';
+}
+
+main(){
+
+
+    Build_Dictionary();
+    string s;
+    /// para cifrar
+
+    cin >> s;
+
+    matrix clave = matrix();
+    for(int i=0;i<2;i++){
+        for(int j=0;j<2;j++){
+            int x;
+            cin >> x;
+            clave.mat[i][j] = x;
+        }
+    }
+
+    string d = Cipher(s,clave);
+    cout << d.substr(0,s.size()) << '\n';
+    cout << Decipher(d,clave).substr(0,s.size());
+
+    /*
+    ABCD
+    1 2
+    3 4
+
+    */
+
+}
+
